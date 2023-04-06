@@ -20,7 +20,7 @@ def execute_workflow():
     outputs = []
     for command in workflow:
         try:
-            result = subprocess.run(['wsl.exe', command], check=True, stdout=subprocess.PIPE, text=True)
+            result = subprocess.run(command, check=True, stdout=subprocess.PIPE, text=True)
             results.append('success')
             outputs.append(result.stdout.strip())
         except subprocess.CalledProcessError as e:
