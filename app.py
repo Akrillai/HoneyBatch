@@ -15,6 +15,21 @@ def index():
 
 from flask import jsonify
 
+@app.route('/edit_step', methods=['GET'])
+def edit_step():
+    index = int(request.args.get('index', 0))
+    command = request.args.get('command')
+    if command and 0 <= index < len(workflow):
+        workflow[index] = command
+    return redirect(url_for('index'))
+
+@app.route('/remove_step', methods=['GET'])
+def remove_step():
+    index = int(request.args.get('index', 0))
+    if 0 <= index < len(workflow):
+        workflow.pop(index)
+    return redirect(url_for('index'))
+
 @app.route('/execute_workflow', methods=['POST'])
 def execute_workflow():
     global workflow
@@ -23,11 +38,24 @@ def execute_workflow():
         return jsonify({"error": "Invalid command index"})
 
     command = workflow[command_index]
+    output = []
     try:
-        result = subprocess.run(['bash.exe', '-c', command], check=True, stdout=subprocess.PIPE, text=True)
-        return jsonify({"status": "success", "output": result.stdout.strip()})
-    except subprocess.CalledProcessError as e:
-        return jsonify({"status": "error", "output": e.stdout.strip() if e.stdout else 'Error occurred during execution'})
+        process = subprocess.Popen(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        for line in process.stdout:
+            output.append(line.strip())
+
+        process.wait()
+        if process.returncode != 0:
+            error_output = process.stderr.read().strip()
+            error_output = error_output.split(": ", 1)[-1].split(": ", 1)[-1]
+            return jsonify({"status": "error", "output": error_output})
+        else:
+            return jsonify({"status": "success", "output": "\n".join(output)})
+    except Exception as e:
+        return jsonify({"status": "error", "output": str(e)})
+
+
+
 
 
 @app.route('/delete_workflow', methods=['POST'])

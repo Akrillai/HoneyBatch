@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workflow Automation App</title>
     <style>
+
+        
         body {
             background-color: grey;
             font-family: Arial, sans-serif;
@@ -47,6 +49,31 @@
         .executing {
             background-color: orange;
         }
+
+        .remove-btn-container {
+        position: relative;
+    }
+
+    .remove-btn {
+        position: absolute;
+        top: 0;
+        right: 20;
+        background-color: transparent;
+        border: none;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .edit-btn {
+        margin-left: 30px;
+        background-color: transparent;
+        border: none;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
     </style>
 </head>
 <body>
@@ -56,16 +83,50 @@
 
 	<ul>
 		{% for command, result, output in zip(workflow, results, outputs) %}
-		<li class="{{ result }}">
-			Step {{ loop.index }}: {{ command }}
-			<br>
-			<small>{{ output }}</small>
-		</li>
+
+
+        <li class="{{ result }}" data-command="{{ command }}">
+            <div class="remove-btn-container">
+                Step {{ loop.index }}: {{ command }}
+                <button class="edit-btn" onclick="editStep(event, {{ loop.index0 }})">✎</button>
+                <button class="remove-btn" onclick="removeStep(event, {{ loop.index0 }})">×</button>
+            </div>
+            <br>
+            <small>{{ output }}</small>
+        </li>
+
 		{% endfor %}
 	</ul>
 
 
     <script>
+
+
+function editStep(event, index) {
+    event.stopPropagation();
+    const listItem = document.querySelectorAll("li")[index];
+    const command = listItem.getAttribute('data-command');
+    listItem.innerHTML = `<input type="text" value="${command}" data-index="${index}" onkeydown="submitEditedStep(event, this)">`;
+    listItem.querySelector('input').focus();
+}
+
+
+    function submitEditedStep(event, inputElement) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const command = inputElement.value;
+            const index = inputElement.getAttribute('data-index');
+            location.href = `{{ url_for('edit_step') }}?index=${index}&command=${encodeURIComponent(command)}`;
+        }
+    }
+
+    function removeStep(event, index) {
+        event.stopPropagation();
+        if (confirm('Are you sure you want to remove this step?')) {
+            location.href = `{{ url_for('remove_step') }}?index=${index}`;
+        }
+    }
+
         function createInput() {
             const li = document.createElement('li');
             const input = document.createElement('input');
@@ -86,27 +147,32 @@
         }
 
         async function executeStep(index) {
-            if (index >= document.querySelectorAll("li").length) {
-                return;
-            }
-            const listItem = document.querySelectorAll("li")[index];
-            listItem.classList.add("executing");
-            listItem.querySelector("small").textContent = "Executing...";
+    if (index >= document.querySelectorAll("li").length) {
+        return;
+    }
+    const listItem = document.querySelectorAll("li")[index];
+    listItem.classList.add("executing");
+    listItem.querySelector("small").textContent = "Executing...";
 
-            const response = await fetch("/execute_workflow", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: `command_index=${index}`,
-            });
+    const response = await fetch("/execute_workflow", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `command_index=${index}`,
+    });
 
-            const data = await response.json();
-            listItem.classList.remove("executing");
-            listItem.classList.add(data.status);
-            listItem.querySelector("small").textContent = data.output;
-            executeStep(index + 1);
-        }
+    const data = await response.json();
+    listItem.classList.remove("executing");
+    listItem.classList.add(data.status);
+    listItem.querySelector("small").textContent = data.output;
+    
+    // Check if the status is "success" before proceeding to the next step
+    if (data.status === "success") {
+        executeStep(index + 1);
+    }
+}
+
 
     </script>
 
