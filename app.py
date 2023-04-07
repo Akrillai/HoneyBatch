@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for,jsonify
 import os
 import subprocess
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 app.jinja_env.globals.update(zip=zip)
 
 workflow = []
@@ -12,8 +12,6 @@ def index():
     results = request.args.getlist('results') or [None] * len(workflow)
     outputs = request.args.getlist('outputs') or [None] * len(workflow)
     return render_template('index.html', workflow=workflow, results=results, outputs=outputs)
-
-from flask import jsonify
 
 @app.route('/edit_step', methods=['GET'])
 def edit_step():
@@ -53,10 +51,6 @@ def execute_workflow():
             return jsonify({"status": "success", "output": "\n".join(output)})
     except Exception as e:
         return jsonify({"status": "error", "output": str(e)})
-
-
-
-
 
 @app.route('/delete_workflow', methods=['POST'])
 def delete_workflow():

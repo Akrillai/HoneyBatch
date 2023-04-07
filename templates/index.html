@@ -1,90 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workflow Automation App</title>
-    <style>
+{% extends "base.html" %}
 
-        
-        body {
-            background-color: grey;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        button {
-            position: absolute;
-            left: 10px;
-        }
-        #delete-workflow-btn {
-            top: 40px;
-        }
-        #execute-workflow-btn {
-            top: 70px;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-            margin-top: 50px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-        li {
-            background-color: white;
-            padding: 10px;
-            margin-bottom: 10px;
-            width: 50%;
-            text-align: center;
-        }
-        .success {
-            background-color: green;
-        }
-        .error {
-            background-color: red;
-        }
-        .executing {
-            background-color: orange;
-        }
+{% block title %}Workflow Automation App{% endblock %}
 
-        .remove-btn-container {
-        position: relative;
-    }
-
-    .remove-btn {
-        position: absolute;
-        top: 0;
-        right: 20;
-        background-color: transparent;
-        border: none;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    .edit-btn {
-        margin-left: 30px;
-        background-color: transparent;
-        border: none;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    </style>
-</head>
-<body>
+{% block content %}
     <button onclick="createInput()">Create Step</button>
     <button id="delete-workflow-btn" onclick="document.getElementById('delete-workflow-form').submit();">Delete Workflow</button>
     <button id="execute-workflow-btn" onclick="executeStep(0)">Execute Workflow</button>
 
-	<ul>
-		{% for command, result, output in zip(workflow, results, outputs) %}
-
-
+    <ul>
+        {% for command, result, output in zip(workflow, results, outputs) %}
         <li class="{{ result }}" data-command="{{ command }}">
             <div class="remove-btn-container">
                 Step {{ loop.index }}: {{ command }}
@@ -94,95 +18,14 @@
             <br>
             <small>{{ output }}</small>
         </li>
-
-		{% endfor %}
-	</ul>
-
-
-    <script>
-
-
-function editStep(event, index) {
-    event.stopPropagation();
-    const listItem = document.querySelectorAll("li")[index];
-    const command = listItem.getAttribute('data-command');
-    listItem.innerHTML = `<input type="text" value="${command}" data-index="${index}" onkeydown="submitEditedStep(event, this)">`;
-    listItem.querySelector('input').focus();
-}
-
-
-    function submitEditedStep(event, inputElement) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const command = inputElement.value;
-            const index = inputElement.getAttribute('data-index');
-            location.href = `{{ url_for('edit_step') }}?index=${index}&command=${encodeURIComponent(command)}`;
-        }
-    }
-
-    function removeStep(event, index) {
-        event.stopPropagation();
-        if (confirm('Are you sure you want to remove this step?')) {
-            location.href = `{{ url_for('remove_step') }}?index=${index}`;
-        }
-    }
-
-        function createInput() {
-            const li = document.createElement('li');
-            const input = document.createElement('input');
-            input.onkeydown = function(event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    submitCommand(input.value);
-                }
-            };
-            li.appendChild(input);
-            document.querySelector('ul').appendChild(li);
-            input.focus();
-        }
-
-        function submitCommand(command) {
-            document.getElementById('command-input').value = command;
-            document.getElementById('command-form').submit();
-        }
-
-        async function executeStep(index) {
-    if (index >= document.querySelectorAll("li").length) {
-        return;
-    }
-    const listItem = document.querySelectorAll("li")[index];
-    listItem.classList.add("executing");
-    listItem.querySelector("small").textContent = "Executing...";
-
-    const response = await fetch("/execute_workflow", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `command_index=${index}`,
-    });
-
-    const data = await response.json();
-    listItem.classList.remove("executing");
-    listItem.classList.add(data.status);
-    listItem.querySelector("small").textContent = data.output;
-    
-    // Check if the status is "success" before proceeding to the next step
-    if (data.status === "success") {
-        executeStep(index + 1);
-    }
-}
-
-
-    </script>
+        {% endfor %}
+    </ul>
 
     <form id="command-form" action="{{ url_for('create_step') }}" method="POST" style="display: none;">
         <input type="hidden" name="command" id="command-input">
     </form>
     <form id="delete-workflow-form" action="{{ url_for('delete_workflow') }}" method="POST" style="display: none;">
     </form>
-
     <form id="execute-workflow-form" action="{{ url_for('execute_workflow') }}" method="POST" style="display: none;">
     </form>
-</body>
-</html>
+{% endblock %}
