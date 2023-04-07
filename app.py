@@ -13,20 +13,22 @@ def index():
     outputs = request.args.getlist('outputs') or [None] * len(workflow)
     return render_template('index.html', workflow=workflow, results=results, outputs=outputs)
 
+from flask import jsonify
+
 @app.route('/execute_workflow', methods=['POST'])
 def execute_workflow():
     global workflow
-    results = []
-    outputs = []
-    for command in workflow:
-        try:
-            result = subprocess.run(command, check=True, stdout=subprocess.PIPE, text=True)
-            results.append('success')
-            outputs.append(result.stdout.strip())
-        except subprocess.CalledProcessError as e:
-            results.append('error')
-            outputs.append(e.stdout.strip() if e.stdout else 'Error occurred during execution')
-    return redirect(url_for('index', results=results, outputs=outputs))
+    command_index = int(request.form.get('command_index', 0))
+    if command_index >= len(workflow):
+        return jsonify({"error": "Invalid command index"})
+
+    command = workflow[command_index]
+    try:
+        result = subprocess.run(['wsl.exe ' + command], check=True, stdout=subprocess.PIPE, text=True, shell=True)
+        return jsonify({"status": "success", "output": result.stdout.strip()})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "output": e.stdout.strip() if e.stdout else 'Error occurred during execution'})
+
 
 @app.route('/delete_workflow', methods=['POST'])
 def delete_workflow():

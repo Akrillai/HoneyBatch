@@ -47,9 +47,9 @@
     </style>
 </head>
 <body>
-    <button onclick="showPrompt()">Create Step</button>
+    <button onclick="createInput()">Create Step</button>
     <button id="delete-workflow-btn" onclick="document.getElementById('delete-workflow-form').submit();">Delete Workflow</button>
-    <button id="execute-workflow-btn" onclick="document.getElementById('execute-workflow-form').submit();">Execute Workflow</button>
+    <button id="execute-workflow-btn" onclick="executeStep(0)">Execute Workflow</button>
 
 	<ul>
 		{% for command, result, output in zip(workflow, results, outputs) %}
@@ -63,13 +63,45 @@
 
 
     <script>
-        function showPrompt() {
-            const command = prompt('Enter the shell command:');
-            if (command) {
-                document.getElementById('command-input').value = command;
-                document.getElementById('command-form').submit();
-            }
+        function createInput() {
+            const li = document.createElement('li');
+            const input = document.createElement('input');
+            input.onkeydown = function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitCommand(input.value);
+                }
+            };
+            li.appendChild(input);
+            document.querySelector('ul').appendChild(li);
+            input.focus();
         }
+
+        function submitCommand(command) {
+            document.getElementById('command-input').value = command;
+            document.getElementById('command-form').submit();
+        }
+
+        function executeStep(index) {
+    if (index >= document.querySelectorAll("li").length) {
+        return;
+    }
+    fetch("/execute_workflow", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `command_index=${index}`,
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            const listItem = document.querySelectorAll("li")[index];
+            listItem.classList.add(data.status);
+            listItem.querySelector("small").textContent = data.output;
+            executeStep(index + 1);
+        });
+}
+
     </script>
 
     <form id="command-form" action="{{ url_for('create_step') }}" method="POST" style="display: none;">
@@ -83,3 +115,4 @@
     </form>
 </body>
 </html>
+       
