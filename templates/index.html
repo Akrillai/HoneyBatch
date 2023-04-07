@@ -44,6 +44,9 @@
         .error {
             background-color: red;
         }
+        .executing {
+            background-color: orange;
+        }
     </style>
 </head>
 <body>
@@ -82,32 +85,34 @@
             document.getElementById('command-form').submit();
         }
 
-        function executeStep(index) {
-    if (index >= document.querySelectorAll("li").length) {
-        return;
-    }
-    fetch("/execute_workflow", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `command_index=${index}`,
-    })
-        .then((response) => response.json())
-        .then((data) => {
+        async function executeStep(index) {
+            if (index >= document.querySelectorAll("li").length) {
+                return;
+            }
             const listItem = document.querySelectorAll("li")[index];
+            listItem.classList.add("executing");
+            listItem.querySelector("small").textContent = "Executing...";
+
+            const response = await fetch("/execute_workflow", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `command_index=${index}`,
+            });
+
+            const data = await response.json();
+            listItem.classList.remove("executing");
             listItem.classList.add(data.status);
             listItem.querySelector("small").textContent = data.output;
             executeStep(index + 1);
-        });
-}
+        }
 
     </script>
 
     <form id="command-form" action="{{ url_for('create_step') }}" method="POST" style="display: none;">
         <input type="hidden" name="command" id="command-input">
     </form>
-
     <form id="delete-workflow-form" action="{{ url_for('delete_workflow') }}" method="POST" style="display: none;">
     </form>
 
@@ -115,4 +120,3 @@
     </form>
 </body>
 </html>
-       
