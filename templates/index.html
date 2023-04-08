@@ -14,7 +14,7 @@
                 Step {{ loop.index }}: {{ command }}
                 <!-- <button class="edit-btn" onclick="editStep(event, {{ loop.index0 }})">✎</button> -->
                 <button class="edit-btn" data-url="{{ url_for('edit_step') }}" onclick="editStep(event, {{ loop.index0 }})">✎</button>
-                <button class="remove-btn" onclick="removeStep(event, {{ loop.index0 }})">×</button>
+                <button class="remove-btn" onclick="removeStep(event, {{ loop.index0 }}, '{{ url_for('remove_step') }}')">×</button>
             </div>
             <br>
             <small>{{ output }}</small>

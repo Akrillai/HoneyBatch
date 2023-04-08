@@ -19,12 +19,13 @@ function submitEditedStep(event, inputElement) {
 }
 
 
-function removeStep(event, index) {
+function removeStep(event, index, removeStepUrl) {
     event.stopPropagation();
     if (confirm('Are you sure you want to remove this step?')) {
-        location.href = `{{ url_for('remove_step') }}?index=${index}`;
+        location.href = `${removeStepUrl}?index=${index}`;
     }
 }
+
 
 function createInput() {
     const li = document.createElement('li');
