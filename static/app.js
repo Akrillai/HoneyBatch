@@ -2,18 +2,22 @@ function editStep(event, index) {
     event.stopPropagation();
     const listItem = document.querySelectorAll("li")[index];
     const command = listItem.getAttribute('data-command');
-    listItem.innerHTML = `<input type="text" value="${command}" data-index="${index}" onkeydown="submitEditedStep(event, this)">`;
+    const editStepUrl = listItem.querySelector(".edit-btn").getAttribute("data-url");
+    listItem.innerHTML = `<input type="text" value="${command}" data-index="${index}" data-url="${editStepUrl}" onkeydown="submitEditedStep(event, this)">`;
     listItem.querySelector('input').focus();
 }
+
 
 function submitEditedStep(event, inputElement) {
     if (event.key === 'Enter') {
         event.preventDefault();
         const command = inputElement.value;
         const index = inputElement.getAttribute('data-index');
-        location.href = `{{ url_for('edit_step') }}?index=${index}&command=${encodeURIComponent(command)}`;
+        const editStepUrl = inputElement.getAttribute("data-url");
+        location.href = `${editStepUrl}?index=${index}&command=${encodeURIComponent(command)}`;
     }
 }
+
 
 function removeStep(event, index) {
     event.stopPropagation();
