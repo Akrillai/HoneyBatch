@@ -46,11 +46,27 @@ function submitCommand(command) {
     document.getElementById('command-form').submit();
 }
 
+function rerunStep(index) {
+    const listItem = document.querySelectorAll("li")[index];
+    if (listItem.classList.contains("error")) {
+        executeStep(index);
+    }
+}
+
+// Modify the executeStep function
+// Modify the executeStep function
 async function executeStep(index) {
     if (index >= document.querySelectorAll("li").length) {
         return;
     }
     const listItem = document.querySelectorAll("li")[index];
+
+    // Add the double-click event listener
+    listItem.addEventListener('dblclick', function () {
+        rerunStep(index);
+    });
+
+    listItem.classList.remove("error"); // Remove the "error" class when re-running
     listItem.classList.add("executing");
     listItem.querySelector("small").textContent = "Executing...";
 
@@ -72,3 +88,4 @@ async function executeStep(index) {
         executeStep(index + 1);
     }
 }
+
